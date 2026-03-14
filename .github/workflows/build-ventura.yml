@@ -25,7 +25,6 @@ jobs:
       - name: Download artifact from build job
         uses: actions/download-artifact@v4
         with:
-          name: macOS-Ventura
           path: ./output
 
       - name: Upload to Gofile
