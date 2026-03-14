@@ -1,5 +1,4 @@
 name: 05. Build macOS Ventura
-
 on:
   workflow_dispatch:
     inputs:
@@ -11,7 +10,6 @@ on:
           - ''
           - 'iso'
           - 'dmg'
-
 jobs:
   build:
     if: ${{ inputs.image_format != '' }}
@@ -19,3 +17,32 @@ jobs:
     with:
       macos_version: 'Ventura'
       image_format: ${{ inputs.image_format }}
+
+  upload:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifact from build job
+        uses: actions/download-artifact@v4
+        with:
+          name: macOS-Ventura
+          path: ./output
+
+      - name: Upload to Gofile
+        run: |
+          FILE=$(find ./output -type f | head -1)
+          echo "找到文件: $FILE"
+          
+          # 先获取可用的服务器
+          SERVER=$(curl -s https://api.gofile.io/servers | python3 -c "import sys,json; data=json.load(sys.stdin); print(data['data']['servers'][0]['name'])")
+          echo "使用服务器: $SERVER"
+          
+          # 上传文件
+          RESPONSE=$(curl -s -F "file=@$FILE" https://$SERVER.gofile.io/uploadFile)
+          echo "上传结果: $RESPONSE"
+          
+          # 提取下载链接
+          LINK=$(echo $RESPONSE | python3 -c "import sys,json; data=json.load(sys.stdin); print(data['data']['downloadPage'])")
+          echo "==============================="
+          echo "✅ 下载链接: $LINK"
+          echo "==============================="
